@@ -1,14 +1,12 @@
 
 import os
-import xlwings
 import logging
 
 from win32 import win32api
 from functools import partial
 
-from mosaic.io.bom import BomDataCollector
-from mosaic.io.tagschedule import TagSchedule
-from mosaic.config import config
+from hss_core.io.bom import BomDataCollector
+from hss_core.io.tagschedule import TagSchedule
 
 SSRS_REPORT_NAME = "SigmaNest Work Order"
 WORKORDER_SHEET_NAME = "WorkOrders_Template"
