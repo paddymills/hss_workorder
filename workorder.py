@@ -2,11 +2,13 @@
 import os
 import logging
 
+import xlwings
+
 from win32 import win32api
 from functools import partial
 
-from hss_core.io.bom import BomDataCollector
-from hss_core.io.tagschedule import TagSchedule
+from prodctrlcore.io.bom import BomDataCollector
+from prodctrlcore.io.tagschedule import TagSchedule
 
 SSRS_REPORT_NAME = "SigmaNest Work Order"
 WORKORDER_SHEET_NAME = "WorkOrders_Template"
@@ -143,6 +145,7 @@ if __name__ == '__main__':
 
     try:
         determine_processing()
-    except:
+    except Exception as err:
         logging.exception("Exception in root handler")
-        raise
+        logging.error(err)
+        raise err
