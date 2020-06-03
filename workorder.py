@@ -13,6 +13,20 @@ from prodctrlcore.io.tagschedule import TagSchedule
 SSRS_REPORT_NAME = "SigmaNest Work Order"
 WORKORDER_SHEET_NAME = "WorkOrders_Template"
 
+logger = logging.getLogger(__name__)
+
+
+def main():
+    # TODO: logging
+    LOG_FILENAME = 'log.txt'
+    logging.basicConfig(filename=LOG_FILENAME, level=logging.ERROR)
+
+    try:
+        determine_processing()
+    except Exception as err:
+        logger.error(err)
+        raise err
+
 
 def determine_processing():
     for app in xlwings.apps:  # active excel applications
@@ -26,45 +40,49 @@ def determine_processing():
 
 
 def pre_processing():
-    # 1) Open SSRS exported report
-    # 2) Get engineering BOM data (material grades)
-    # 3) Get other work order data, if available (material grades and operations)
-    # 4) Check for Charge Ref number
-    # 5) Save
+    """
+        Work order pre-processing
+        Meant to be run after report has been downloaded
+        but before operations are entered
 
-    # 1) Open SSRS exported report
+        Order of operations:
+            1) Open SSRS exported report
+            2) Get engineering BOM data (material grades)
+            3) Get other work order data, if available (material grades and operations)
+            4) Check for Charge Ref number
+            5) Save
+    """
+
     wb = open_ssrs_report_file()
-    assert wb is not None
-
-    # 2) Get engineering BOM data (material grades)
-    # 3) Get other work order data, if available (material grades and operations)
     fill_in_data(wb.sheets[0])
 
-    # 4) Check for Charge Ref number
     header = wb.sheets[0].range('A1').expand('right').value
     index = header.index("ChargeRefNumber")
-
-    if wb.sheets[0].range('O2').value is None:
+    if wb.sheets[0].range(2, index).value is None:
         win32api.MessageBox(wb.app.hwnd, 'Charge Ref number needs entered.')
-
-    # 5) Save
     wb.save()
 
 
 def post_processing(wb):
+    """
+        Work order pre-processing
+        Meant to be run after operations are entered
+
+        Order of operations:
+            1) Save pre-subtotalled document
+            2) Fill out ProductionDemand spreadsheet
+            3) Fill out CDS(TagSchedule)
+            4) Import WBS-split data
+    """
+
+    job_shipment = '-'.join(wb.sheets[0].range('K2:L2').value)
+
     # 1) Save pre-subtotalled document
-    # 2) Fill out ProductionDemand spreadsheet
-    # 3) Fill out CDS(TagSchedule)
-    # 4) Import WBS-split data
-
-    js = '-'.join(wb.sheets[0].range('K2:L2').value)
-
-    # 1) Save pre-subtotalled document
 
     # 2) Fill out ProductionDemand spreadsheet
 
     # 3) Fill out CDS(TagSchedule)
-    ts = TagSchedule(js)
+    ts = TagSchedule(job_shipment)
     ts.webs = []
     ts.flanges = []
     ts.code_delivery = []
@@ -87,7 +105,7 @@ def open_ssrs_report_file():
     if last_modified_path is None:
         win32api.MessageBox(
             0, "Please download report from SSRS", "Report Not Found")
-        return None
+        raise FileNotFoundError
 
     return xlwings.Book(last_modified_path)
 
@@ -139,13 +157,4 @@ def fill_in_data(sheet):
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~ PROGRAM RUN ~~~~~~~~~~~~~~~~~~~~~~~~
 if __name__ == '__main__':
-    # TODO: logging
-    LOG_FILENAME = 'log.txt'
-    logging.basicConfig(filename=LOG_FILENAME, level=logging.ERROR)
-
-    try:
-        determine_processing()
-    except Exception as err:
-        logging.exception("Exception in root handler")
-        logging.error(err)
-        raise err
+    main()
