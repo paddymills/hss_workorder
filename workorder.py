@@ -4,11 +4,13 @@ import logging
 
 import xlwings
 
-from win32 import win32api
+from win32.win32api import MessageBox
 from functools import partial
 
-from prodctrlcore.io.bom import BomDataCollector
-from prodctrlcore.io.tagschedule import TagSchedule
+from prodctrlcore.io import HeaderParser
+from prodctrlcore.hssformats import BomDataCollector, TagSchedule, WorkOrder
+from prodctrlcore.hssformats.workorder import HEADER_ALIASES, get_job_data
+
 
 SSRS_REPORT_NAME = "SigmaNest Work Order"
 WORKORDER_SHEET_NAME = "WorkOrders_Template"
@@ -55,11 +57,6 @@ def pre_processing():
 
     wb = open_ssrs_report_file()
     fill_in_data(wb.sheets[0])
-
-    header = wb.sheets[0].range('A1').expand('right').value
-    index = header.index("ChargeRefNumber")
-    if wb.sheets[0].range(2, index).value is None:
-        win32api.MessageBox(wb.app.hwnd, 'Charge Ref number needs entered.')
     wb.save()
 
 
@@ -103,56 +100,53 @@ def open_ssrs_report_file():
 
     # no SSRS report file found
     if last_modified_path is None:
-        win32api.MessageBox(
+        MessageBox(
             0, "Please download report from SSRS", "Report Not Found")
         raise FileNotFoundError
 
     return xlwings.Book(last_modified_path)
 
 
-def get_archived_work_order_data():
-    pass
-
-
 def fill_in_data(sheet):
     # get header column IDs
-    header = sheet.range('A1').expand('right').value  # Row 1
-    part = header.index('Operation5')   # part name w/o job
-    grade = header.index('Material')
-    remark = header.index('Remark')
-    op1 = header.index('Operation1')
-    op2 = header.index('Operation2')
-    op3 = header.index('Operation3')
+    header = HeaderParser()
+    header.add_header_aliases(HEADER_ALIASES)
+
+    job = sheet.range(2, header.job).value
+    shipment = sheet.range(2, header.shipment).value
 
     # get engineering BOM dataand previous work order data
     # TODO: fetch engineering data on demand
     #   1) read JobStandards on first occurrence (if BOM not read)
     #   2) read BOM on first occurrence of part name not matching regex
-    eng.force_cvn_mode = True
-    bom = BomDataCollector(*sheet.range('K2:L2').value)
-    archived_data = get_archived_work_order_data()
+    bom = BomDataCollector(job, shipment, force_cvn=True)
+    archived_data = get_job_data(job)
 
     i = 2
     while sheet.range(i, 1).value:
         item = partial(sheet.range, i)
 
-        part_name = item(part).value
-        update_grade = (item(grade).value is None)
-        has_archive_data = (part_name in archived_data.keys())
+        row = header.parse_row(item(1).expand('right').value)
+        part_archive_data = archived_data.get(row.mark, None)
 
-        if update_grade:
-            if has_archive_data:
-                item(grade).value = archived_data[part_name]['grade']
+        if item(header.grade).value is None:
+            if part_archive_data:
+                item(header.grade).value = part_archive_data.grade
             else:
-                item(grade).value = bom.get_part_data(part_name)
+                item(header.grade).value = bom.get_part_data(row.mark).grade
 
-        if has_archive_data:
-            item(remark).value = archived_data[part_name]['remark']
-            item(op1).value = archived_data[part_name]['op1']
-            item(op2).value = archived_data[part_name]['op2']
-            item(op3).value = archived_data[part_name]['op3']
+        if part_archive_data:
+            item(header.remark).value = part_archive_data.remark
+            item(header.op1).value = part_archive_data.op1
+            item(header.op2).value = part_archive_data.op2
+            item(header.op3).value = part_archive_data.op3
 
         i += 1
+
+    # verify ChargeRefNumber is valid
+    if sheet.range(2, header.charge_ref_number).value is None:
+        hwnd = sheet.book.app.hwnd
+        MessageBox(hwnd, 'Charge Ref number needs entered.')
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~ PROGRAM RUN ~~~~~~~~~~~~~~~~~~~~~~~~
