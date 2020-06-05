@@ -9,8 +9,9 @@ from xlwings import Book, app as xl_apps
 from functools import partial
 from re import compile as regex
 
-from prodctrlcore.io import HeaderParser
+from prodctrlcore.io import HeaderParser, ProductionDemand, SNDB
 from prodctrlcore.hssformats import BomDataCollector, TagSchedule, WorkOrder, WorkOrderJobData
+from prodctrlcore.hssformats import workorder as HEADER_ALIASES
 
 
 SSRS_REPORT_NAME = "SigmaNest Work Order"
@@ -19,19 +20,6 @@ WORKORDER_SHEET_NAME = "WorkOrders_Template"
 HEAT_MARK_KEY_WORD = "HighHeatNum"
 
 logger = logging.getLogger(__name__)
-
-HEADER_ALIASES = {
-    'Part': 'ItemName',
-    'State': 'Customer',
-    'Job': 'ItemData1',
-    'Ship': 'ItemData2',
-    'Shipping Group': 'ItemData4',
-    'Mark': 'Operation5',
-    'MaterialMaster': 'Operation6',
-    'RawSize': 'Operation7',
-    'PartSize': 'Operation8',
-    'HeatMarkKeyWord': 'Operation10'
-}
 
 
 def main():
@@ -177,7 +165,7 @@ def fill_in_data(sheet):
         item = partial(sheet.range, i)
 
         row = header.parse_row(item(1).expand('right').value)
-        part_archive_data = archived_data.get(row.mark, None)
+        part_archive_data = archived_data.get_part(row.mark)
 
         if item(header.grade).value is None:
             if part_archive_data:
