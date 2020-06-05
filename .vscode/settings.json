@@ -5,6 +5,7 @@
     "hssformats",
     "hwnd",
     "pyodbc",
+    "sndb",
     "xlwings"
   ]
 }

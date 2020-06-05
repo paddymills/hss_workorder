@@ -1,21 +1,37 @@
 
-import os
 import logging
 
-import xlwings
+from os import scandir
+from os.path import expanduser
 
 from win32.win32api import MessageBox
+from xlwings import Book, app as xl_apps
 from functools import partial
+from re import compile as regex
 
 from prodctrlcore.io import HeaderParser
-from prodctrlcore.hssformats import BomDataCollector, TagSchedule, WorkOrder
-from prodctrlcore.hssformats.workorder import HEADER_ALIASES, get_job_data
+from prodctrlcore.hssformats import BomDataCollector, TagSchedule, WorkOrder, WorkOrderJobData
 
 
 SSRS_REPORT_NAME = "SigmaNest Work Order"
 WORKORDER_SHEET_NAME = "WorkOrders_Template"
 
+HEAT_MARK_KEY_WORD = "HighHeatNum"
+
 logger = logging.getLogger(__name__)
+
+HEADER_ALIASES = {
+    'Part': 'ItemName',
+    'State': 'Customer',
+    'Job': 'ItemData1',
+    'Ship': 'ItemData2',
+    'Shipping Group': 'ItemData4',
+    'Mark': 'Operation5',
+    'MaterialMaster': 'Operation6',
+    'RawSize': 'Operation7',
+    'PartSize': 'Operation8',
+    'HeatMarkKeyWord': 'Operation10'
+}
 
 
 def main():
@@ -31,7 +47,7 @@ def main():
 
 
 def determine_processing():
-    for app in xlwings.apps:  # active excel applications
+    for app in xl_apps:  # active excel applications
         for book in app.books:
             if book.name.startswith(SSRS_REPORT_NAME):
                 book.activate()
@@ -49,9 +65,10 @@ def pre_processing():
 
         Order of operations:
             1) Open SSRS exported report
-            2) Get engineering BOM data (material grades)
-            3) Get other work order data, if available (material grades and operations)
-            4) Check for Charge Ref number
+            2) Fill out any known data
+                1) Get engineering BOM data (material grades)
+                2) Get other work order data, if available (material grades and operations)
+                3) Check for Charge Ref number
             5) Save
     """
 
@@ -67,24 +84,57 @@ def post_processing(wb):
 
         Order of operations:
             1) Save pre-subtotalled document
-            2) Fill out ProductionDemand spreadsheet
-            3) Fill out CDS(TagSchedule)
+            2) Fill out CDS(TagSchedule)
+            3) Fill out ProductionDemand spreadsheet
             4) Import WBS-split data
     """
 
-    job_shipment = '-'.join(wb.sheets[0].range('K2:L2').value)
+    sheet = wb.sheets[0]
 
-    # 1) Save pre-subtotalled document
+    # get header column IDs
+    header = HeaderParser()
+    header.add_header_aliases(HEADER_ALIASES)
 
-    # 2) Fill out ProductionDemand spreadsheet
+    job = sheet.range(2, header.job).value
+    shipment = sheet.range(2, header.shipment).value
 
-    # 3) Fill out CDS(TagSchedule)
-    ts = TagSchedule(job_shipment)
-    ts.webs = []
-    ts.flanges = []
-    ts.code_delivery = []
+    # open documents for writing
+    workorder = WorkOrder(job, shipment)
+    ts = TagSchedule(job, shipment)
+    demand = ProductionDemand()
+    sndb = SNDB()
 
-    # 4) Import WBS-split data
+    # matching regexes
+    WEB_RE = regex(r"\w+-[Ww]\w+")
+    FLG_RE = regex(r"\w+-[TtBb]\w+")
+    PART_RE = regex(r"\A(PL|SHT|SHEET|MISC)")
+
+    i = 2
+    while sheet.range(i, 1).value:
+        row = header.parse_row(sheet.range(i, 1).expand('right').value)
+
+        # 1) Save pre-subtotalled document
+        workorder.add_row(row)
+
+        # 2) Fill out CDS(TagSchedule)
+        if WEB_RE.match(row.mark):
+            ts.webs.add(row)
+        elif FLG_RE.match(row.mark):
+            ts.flange.add(row)
+        elif PART_RE.match(row.part_size):
+            if row.remark and row.remark != 'Blank':
+                ts.code_delivery.add(row)
+        else:
+            # shape items: do not push to SigmaNest
+            continue
+
+        # 3) Fill out ProductionDemand spreadsheet
+        demand.add(row)
+
+        # 4) Import WBS-split data
+        sndb.updateWbsPartMapping(row)
+
+        i += 1
 
 
 def open_ssrs_report_file():
@@ -92,7 +142,7 @@ def open_ssrs_report_file():
     last_modified_path = None
 
     # scan through folder looking for most recent SSRS report file
-    for dir_entry in os.scandir(os.path.expanduser(r"~\Downloads")):
+    for dir_entry in scandir(expanduser(r"~\Downloads")):
         if dir_entry.name.startswith(WORKORDER_SHEET_NAME):
             if dir_entry.stat().st_mtime > last_modified:
                 last_modified = dir_entry.stat().st_mtime
@@ -104,7 +154,7 @@ def open_ssrs_report_file():
             0, "Please download report from SSRS", "Report Not Found")
         raise FileNotFoundError
 
-    return xlwings.Book(last_modified_path)
+    return Book(last_modified_path)
 
 
 def fill_in_data(sheet):
@@ -120,7 +170,7 @@ def fill_in_data(sheet):
     #   1) read JobStandards on first occurrence (if BOM not read)
     #   2) read BOM on first occurrence of part name not matching regex
     bom = BomDataCollector(job, shipment, force_cvn=True)
-    archived_data = get_job_data(job)
+    archived_data = WorkOrderJobData(job)
 
     i = 2
     while sheet.range(i, 1).value:
@@ -140,6 +190,8 @@ def fill_in_data(sheet):
             item(header.op1).value = part_archive_data.op1
             item(header.op2).value = part_archive_data.op2
             item(header.op3).value = part_archive_data.op3
+
+        item(header.heat_mark_key_word).value = HEAT_MARK_KEY_WORD
 
         i += 1
 
