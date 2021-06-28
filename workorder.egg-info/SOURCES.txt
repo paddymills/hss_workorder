@@ -1,0 +1,7 @@
+README.md
+setup.py
+workorder.egg-info/PKG-INFO
+workorder.egg-info/SOURCES.txt
+workorder.egg-info/dependency_links.txt
+workorder.egg-info/requires.txt
+workorder.egg-info/top_level.txt

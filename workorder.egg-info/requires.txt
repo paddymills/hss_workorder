@@ -1,0 +1,3 @@
+xlwings>=0.19.4
+pyodbc>=4.0.30
+prodctrlcore@ git+https://github.com/paddymills/prodctrlcore>=0.5.2
