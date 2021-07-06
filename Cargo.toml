@@ -7,3 +7,25 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+futures = "0.3.15"
+toml = "0.5.8"
+winapi = "0.3.9"
+
+[dependencies.serde]
+version = "^1.0"
+features = [ "derive" ]
+
+[dependencies.sqlx]
+version = "0.5.5"
+features = [ "mssql", "runtime-async-std-native-tls" ]
+
+[dependencies.tiberius]
+version = "0.5.15"
+features = [ "sql-browser-async-std", "integrated-auth-gssapi" ]
+
+[dependencies.async-std]
+version = "1.9.0"
+features = [ "attributes" ]
+
+[target.'cfg(windows)'.build-dependencies]
+winres = "0.1.11"
