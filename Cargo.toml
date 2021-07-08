@@ -25,5 +25,8 @@ features = [ "macros", "net", "rt-multi-thread" ]
 version = "0.6.7"
 features = [ "compat" ]
 
+[dev-dependencies]
+tokio-test = "0.4.2"
+
 [target.'cfg(windows)'.build-dependencies]
 winres = "0.1.11"

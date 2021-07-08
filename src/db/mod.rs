@@ -29,4 +29,7 @@ pub mod config {
         config(crate::Config::from("conf.toml")?.databases.sigmanest)
     }
 
+    pub fn sndev() -> Result<tiberius::Config, Box<dyn std::error::Error>> {
+        config(crate::Config::from("conf.toml")?.databases.sn_dev)
+    }
 }

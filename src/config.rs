@@ -13,6 +13,7 @@ pub struct Config {
 pub struct Databases {
     pub sigmanest: String,
     pub engineering: String,
+    pub sn_dev: String,
 }
 
 impl Config {
@@ -21,6 +22,7 @@ impl Config {
             databases: Databases { 
                 sigmanest: String::new(),
                 engineering: String::new(),
+                sn_dev: String::new(),
             }
         }
     }
