@@ -1,6 +1,8 @@
 
 pub mod db;
-pub mod config;
+mod config;
+
+pub use config::Config;
 
 use std::io::{self, Write};
 
