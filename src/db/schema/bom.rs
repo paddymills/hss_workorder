@@ -1,7 +1,7 @@
 
 use std::fmt::{self, Write};
 
-pub const GET_BOM: &str = "EXEC SAP.GetBOMData @Job=@P1, @Ship=@P2";
+pub const GET_BOM: &str = "EXEC BOM.SAP.GetBOMData @Job=@P1, @Ship=@P2";
 
 #[derive(Debug, Default)]
 pub struct Part {

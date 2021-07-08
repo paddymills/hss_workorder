@@ -1,25 +1,22 @@
- 
-use tiberius::{Client, Config, AuthMethod};
-// use tiberius::ColumnType::{BigVarChar, Floatn, Intn};
-use async_std::net::TcpStream;
 
+use std::error::Error;
 
-use workorder::db::{queries, Part};
+use tiberius::Client;
+use tokio::net::TcpStream;
+use tokio_util::compat::TokioAsyncWriteCompatExt;
 
-#[async_std::main]
-async fn main() -> Result<(), tiberius::error::Error> {
+use workorder::db::{self, queries, Part};
 
-    let mut config = Config::new();
-    config.host("HSSSQLSERV");
-    config.database("BOM");
-    config.authentication(AuthMethod::Integrated);
-    config.trust_cert();
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    
+    let config = db::config::eng()?;
 
     let tcp = TcpStream::connect(config.get_addr()).await?;
     tcp.set_nodelay(true)?;
 
     // Handling TLS, login and other details related to the SQL Server.
-    let mut client = Client::connect(config, tcp).await?;
+    let mut client = Client::connect(config, tcp.compat_write()).await?;
     
     let job = "1200055C";
     let ship: i32 = 3;
@@ -30,22 +27,17 @@ async fn main() -> Result<(), tiberius::error::Error> {
     let mut rows = Vec::<Part>::new();
     for row in res {
 
-        // for i in 0..row.len() {
-        //     let val = match row.columns()[i].column_type() {
-        //         BigVarChar => String::from(row.get::<&str, usize>(i).unwrap()),
-        //         Floatn => row.get::<f32, usize>(i).unwrap().to_string(),
-        //         Intn => row.get::<i32, usize>(i).unwrap().to_string(),
-        //         _ => unreachable!("some other type"),
-        //     };
-
-        //     println!( "\t{}: {}", row.columns()[i].name(), val );
-        // }
-
         rows.push(Part::from_sql(&row));
     }
 
+    let mut i = 0;
     for row in rows.iter().filter(|x| x.is_pl()) {
         println!("{:}", row);
+
+        i += 1;
+        if i > 5 {
+            break;
+        }
     }
 
     Ok(())
