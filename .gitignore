@@ -1,4 +1,3 @@
 /target
 
-sndb.toml
-bom.toml
+/config

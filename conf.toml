@@ -1,6 +1,0 @@
-[databases]
-# sigmanest = "W9250\\SIGMANEST"
-sigmanest = "HIIWINBL18"
-engineering = "HSSSQLSERV"
-
-sn_dev = "HIIWINBL5"
