@@ -5,7 +5,7 @@ use tiberius::{Client, Row};
 use tokio::net::TcpStream;
 use tokio_util::compat::TokioAsyncWriteCompatExt;
 
-use workorder::db::{self, queries, Part};
+use workorder_core::db::{self, queries, Part};
 
 #[tokio::main]
 async fn main() {

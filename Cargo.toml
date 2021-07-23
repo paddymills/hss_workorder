@@ -1,35 +1,5 @@
-[package]
-name = "workorder"
-version = "0.1.0"
-authors = ["paddymills <paddymills@pm.me>"]
-edition = "2018"
-
-[dependencies]
-futures = "0.3.15"
-winapi = "0.3.9"
-
-[dependencies.figment]
-version = "0.10.6"
-features = [ "toml" ]
-
-[dependencies.serde]
-version = "^1.0"
-features = [ "derive" ]
-
-[dependencies.tiberius]
-version = "0.5.15"
-features = [ "sql-browser-tokio", "integrated-auth-gssapi" ]
-
-[dependencies.tokio]
-version = "1.8.1"
-features = [ "macros", "net", "rt-multi-thread" ]
-
-[dependencies.tokio-util]
-version = "0.6.7"
-features = [ "compat" ]
-
-[dev-dependencies]
-tokio-test = "0.4.2"
-
-[target.'cfg(windows)'.build-dependencies]
-winres = "0.1.11"
+[workspace]
+members = [
+    "core",
+    "cds"
+]
