@@ -3,6 +3,12 @@ use std::fmt::{self, Write};
 
 pub const GET_BOM: &str = "EXEC BOM.SAP.GetBOMData @Job=@P1, @Ship=@P2";
 
+enum CommType {
+    Plate,
+    Shape,
+    Skip
+}
+
 #[derive(Debug, Default)]
 pub struct Part {
     pub mark: String,
@@ -40,15 +46,15 @@ impl Part {
         };
 
         Self {
-            mark: row.get::<&str, _>("Piecemark").unwrap().to_string(),
+            mark: row.get::<&str, _>("Piecemark").unwrap_or_default().to_string(),
 
-            qty: row.get::<i32, _>("Qty").unwrap(),
-            comm: row.get::<&str, _>("Commodity").unwrap().to_string(),
-            desc: row.get::<&str, _>("Description").unwrap().to_string(),
+            qty: row.get::<i32, _>("Qty").unwrap_or_default(),
+            comm: row.get::<&str, _>("Commodity").unwrap_or_default().to_string(),
+            desc: row.get::<&str, _>("Description").unwrap_or_default().to_string(),
 
-            thk: row.get::<f32, _>("Thick").unwrap(),
-            wid: row.get::<f32, _>("Width").unwrap(),
-            len: row.get::<f32, _>("Length").unwrap(),
+            thk: row.get::<f32, _>("Thick").unwrap_or_default(),
+            wid: row.get::<f32, _>("Width").unwrap_or_default(),
+            len: row.get::<f32, _>("Length").unwrap_or_default(),
 
             spec: unwrap_or_none(row.get::<&str, _>("Specification")),
             grade: unwrap_or_none(row.get::<&str, _>("Grade")),
@@ -59,21 +65,28 @@ impl Part {
         }
     }
 
-    pub fn is_skip_comm(self) -> bool {
+    fn comm_type(&self) -> CommType {
         match self.comm.as_str() {
-            "PL" => false,
-            "L" => false,
-            "MC" => false,
-            "C" => false,
-            "W" => false,
-            "WT" => false,
-            _ => true,
+            "PL" => CommType::Plate,
+            "L" => CommType::Shape,
+            "MC" => CommType::Shape,
+            "C" => CommType::Shape,
+            "W" => CommType::Shape,
+            "WT" => CommType::Shape,
+            _ => CommType::Skip,
+        }
+    }
+
+    pub fn is_skip_comm(&self) -> bool {
+        match self.comm_type() {
+            CommType::Skip => true,
+            _ => false,
         }
     }
 
     pub fn is_pl(&self) -> bool {
-        match self.comm.as_str() {
-            "PL" => true,
+        match self.comm_type() {
+            CommType::Plate => true,
             _ => false,
         }
     }
