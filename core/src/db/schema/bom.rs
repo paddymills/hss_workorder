@@ -46,19 +46,19 @@ impl Part {
         };
 
         Self {
-            mark: row.get::<&str, _>("Piecemark").unwrap_or_default().to_string(),
+            mark: row.get::<&str, _>("Piecemark").unwrap_or_default().into(),
 
-            qty: row.get::<i32, _>("Qty").unwrap_or_default(),
-            comm: row.get::<&str, _>("Commodity").unwrap_or_default().to_string(),
-            desc: row.get::<&str, _>("Description").unwrap_or_default().to_string(),
+            qty:  row.get::<i32, _>("Qty").unwrap_or_default(),
+            comm: row.get::<&str, _>("Commodity").unwrap_or_default().into(),
+            desc: row.get::<&str, _>("Description").unwrap_or_default().into(),
 
             thk: row.get::<f32, _>("Thick").unwrap_or_default(),
             wid: row.get::<f32, _>("Width").unwrap_or_default(),
             len: row.get::<f32, _>("Length").unwrap_or_default(),
 
-            spec: unwrap_or_none(row.get::<&str, _>("Specification")),
-            grade: unwrap_or_none(row.get::<&str, _>("Grade")),
-            test: unwrap_or_none(row.get::<&str, _>("ImpactTest")),
+            spec:   unwrap_or_none(row.get::<&str, _>("Specification")),
+            grade:  unwrap_or_none(row.get::<&str, _>("Grade")),
+            test:   unwrap_or_none(row.get::<&str, _>("ImpactTest")),
             remark: unwrap_or_none(row.get::<&str, _>("Remark")),
 
             ..Default::default()
