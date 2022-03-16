@@ -2,6 +2,7 @@
 mod settings;
 
 pub mod db;
+pub mod part;
 
 pub mod config {
 
