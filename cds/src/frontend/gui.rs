@@ -25,11 +25,10 @@ pub struct Job {
 
 impl std::fmt::Display for Job {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.job == 0 {
-            write!(f, "Select Job")
+        match self.job {
+            0 => write!(f, "Select Job"),
+            _ => write!(f, "{}{}", self.job, self.structure)
         }
-
-        write!(f, "{}{}", self.job, self.structure)
     }
 }
 
