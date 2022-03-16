@@ -1,12 +1,5 @@
 
-pub use crate::db;
-
-mod schema;
-pub use schema::Part;
-
-pub mod queries {
-    pub use super::schema::GET_BOM;
-}
+pub mod schema;
 
 pub mod config {
 

@@ -1,3 +1,4 @@
 
 mod bom;
-pub use bom::{GET_BOM, Part};
+pub use bom::{pull_bom, process_bom};
+
