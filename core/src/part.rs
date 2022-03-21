@@ -59,22 +59,22 @@ impl Part {
             Some(s) => {
                 match s.as_str() {
                     "A240 Type 304" => return String::from("A240-304"),
-                    x => write!(&mut result, "{}", x).expect("Failed to write to stream"),
+                    x => result += x,
                 }
             },
             None => return result,
         }
 
-        write!(&mut result, "-").expect("Failed to write to stream");
+        result += "-";
 
-        let mut zone = 2;
+        let mut zone = "2";
         match &self.grade {
             Some(g) => {
                 if g.starts_with("HPS") {
-                    zone = 3
+                    zone = "3"
                 }
 
-                write!(&mut result, "{}", g).expect("Failed to write to stream");
+                result += g;
             },
             _ => (),
         };
@@ -82,14 +82,14 @@ impl Part {
         match &self.test {
             Some(s) => {
                 match s.as_str() {
-                    "FCM" => write!(&mut result, "F{}", zone).expect("Failed to write to stream"),
-                    "T" => write!(&mut result, "T{}", zone).expect("Failed to write to stream"),
+                    "FCM" => result += &("F{}".to_owned() + zone),
+                    "T" =>   result += &("T{}".to_owned() + zone),
                     _ => ()
                 }
             },
             None => {
                 if force_cvn {
-                    write!(&mut result, "T{}", zone).expect("Failed to write to stream");
+                    result += &("T".to_owned(), zone);
                 }
             },
         };
