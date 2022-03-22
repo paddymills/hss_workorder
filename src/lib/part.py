@@ -5,6 +5,15 @@ import re
 PLATE_COMM = re.compile(r"[PL|SHEET]")
 SHAPE_COMM = re.compile(r"[L|C|MC|W|WT]")
 
+WO_REGEXES = {
+    "WEBS": re.compile(r"[A-Z]+[0-9]+[A-Z]*-(?:W[NF]?[0-9]+|X[A-Z])"),  # or clause added for backup bar (i.e. G1A-XA)
+    "FLGS": re.compile(r"[A-Z]+[0-9]+[A-Z]*-[TB][0-9]+"),
+    "G": re.compile(r"X[0-9]+[A-Z]+"),
+    "M": re.compile(r"M[0-9]+[A-Z]+"),
+    "S": re.compile(r"Z[0-9]+[A-Z]+"),
+    "PD": re.compile(r"PD[0-9]+-[A-Z]+"),
+}
+
 DEFAULT_PUNCH_THK = 0.625
 
 
@@ -16,9 +25,9 @@ class Part:
 
         if init_data is not None:
             if isinstance(init_data, Row):
-                self.__init_sql__(init_data)
+                self._init_sql(init_data)
 
-    def __init_sql__(self, row):
+    def _init_sql(self, row):
         self.mark = row.Piecemark
         
         self.qty = row.Qty
@@ -34,19 +43,31 @@ class Part:
 
     @property
     def is_web(self):
-        return False
+        return WO_REGEXES["WEBS"].fullmatch(self.mark)
 
     @property
     def is_flange(self):
-        return False
+        return WO_REGEXES["FLGS"].fullmatch(self.mark)
 
     @property
     def is_main(self):
+        # most jobs have more flanges than webs
+        # so its more likely that it is a flange, than a web
+        # that's why check flanges first
         return self.is_flange or self.is_web
 
     @property
     def is_secondary(self):
         return not self.is_main
+
+    @property
+    def wo_name(self):
+        for name, regex in WO_REGEXES:
+            if regex.match(self.mark):
+                return name
+
+        return "MISC"
+
 
     def infer_ops(self, min_punch=DEFAULT_PUNCH_THK):
         # Possible operations:
@@ -145,8 +166,10 @@ class MatlType:
     def __init__(self, comm):
         self.comm = comm
 
+    @property
     def is_plate(self):
         return PLATE_COMM.fullmatch(self.comm)
 
+    @property
     def is_shape(self):
         return SHAPE_COMM.fullmatch(self.comm)
