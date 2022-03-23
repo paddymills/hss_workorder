@@ -1,5 +1,7 @@
 
-class DictObj:
+from collections.abc import Mapping
+
+class DictObj(Mapping):
 
     def __init__(self, d):
         self.attrs = d.keys()
@@ -22,3 +24,12 @@ class DictObj:
                 results.append("{}: {}".format(k, v))
 
         return "\n".join(results)
+
+    def __len__(self):
+        return len(self.attrs)
+
+    def __getitem__(self, k):
+        return getattr(self, k)
+
+    def __iter__(self):
+        return iter(self.attrs)
