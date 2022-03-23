@@ -1,13 +1,11 @@
 
-import toml
 import xlwings
 
-from lib import Part, DictObj
+from lib import Part
 from lib.db import DbConnection, SndbConnection
 
-config = DictObj(toml.load("config.toml"))
-SIMTRANS_TRANSTYPE = "SN84"
-HEATSWAP_KEYWORD = "HighHeatNum"
+from . import config
+from change_mgmt import ChangeManager
 
 def init_data(job, shipment):
     parts = dict()
@@ -39,33 +37,8 @@ def init_data(job, shipment):
 
 
 def import_workorder(parts):
-    inserts = list()
-    for part in parts:
-        # TODO: change management
-        inserts.append([
-            SIMTRANS_TRANSTYPE, config.simtrans.district,
-            part.wo_name, part.sn_name, part.qty, part.grade,
-            part.job, part.shipment,
-            part.mark, part.raw_mm, part.raw_mm_size, part.desc,
-            HEATSWAP_KEYWORD
-        ])
-    with SndbConnection(**config.db.sigmanest) as db:
-        db.cursor.executemany("""
-            INSERT INTO TransAct (
-                TransType, District,
-                OrderNo, ItemName, Qty, Material,
-                ItemData1, ItemData2,
-                ItemData9, ItemData10, ItemData11, ItemData12,
-                ItemData14
-            )
-            Values (
-                ?, ?,
-                ?, ?, ?, ?,
-                ?, ?,
-                ?, ?, ?, ?, ?
-            )
-        """, inserts)
-        db.commit()
+    change_manager = ChangeManager()
+    change_manager.process_parts(parts)
 
 
 def update_charge_ref(job, shipment, charge_ref):
