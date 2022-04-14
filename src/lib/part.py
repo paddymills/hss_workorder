@@ -1,5 +1,5 @@
 
-from curses import setupterm
+# from curses import setupterm
 from pyodbc import Row
 import re
 
@@ -17,6 +17,7 @@ WO_REGEXES = {
 
 DEFAULT_PUNCH_THK = 0.625
 NUM_OPS = 3
+
 
 class Part:
 
@@ -38,7 +39,7 @@ class Part:
 
     def _init_sql(self, row):
         self.mark = row.Piecemark
-        
+
         self.qty = row.Qty
         self.comm = MatlType(row.Commodity)
         self.desc = row.Description
@@ -121,7 +122,9 @@ class Part:
         # TODO: find if part has holes
         has_holes = kwargs.get("has_holes", False)
 
-        find_remark = lambda x: re.search(x, self.remark, re.IGNORECASE)
+        def find_remark(val):
+            return re.search(val, self.remark, re.IGNORECASE)
+
         has_end_mill = kwargs.get("has_end_mill") or find_remark("b1e")
         bent = find_remark("bent")
         can_punch = kwargs.get("can_punch") or all([
@@ -177,7 +180,7 @@ class Part:
                 return op_map[op]
 
         return "Blank"
-    
+
     def add_raw_matl(self, mm, size):
         self.raw_mm = mm
         self.raw_mm_size = size

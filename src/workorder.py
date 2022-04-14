@@ -7,6 +7,7 @@ from lib.db import DbConnection, SndbConnection
 from . import config
 from change_mgmt import ChangeManager
 
+
 def init_data(job, shipment):
     parts = dict()
     with DbConnection(server=config.db.engineering.server, use_win_auth=True) as db:
@@ -30,7 +31,7 @@ def init_data(job, shipment):
             mark = row.PartName.split("_", 1)[1].upper()
             if mark in parts:
                 parts[mark].set_ops(row.Data6, row.Data7, row.Data8)
-    
+
     # TODO: retrieve raw material masters, sizes and mapping
 
     return parts.values()
