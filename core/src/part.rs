@@ -1,7 +1,7 @@
 
 use std::{
     convert::TryInto,
-    fmt::{self, Display, Formatter, Write}
+    fmt::{self, Display, Formatter}
 };
 
 mod material;
