@@ -89,7 +89,7 @@ impl Part {
             },
             None => {
                 if force_cvn {
-                    result += &("T".to_owned(), zone);
+                    result += &("T".to_owned() + zone);
                 }
             },
         };
