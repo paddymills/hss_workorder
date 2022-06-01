@@ -1,5 +1,5 @@
 
-use std::fmt::{self, Display, Formatter, Write};
+use std::fmt::{self, Display, Formatter};
 use tiberius;
 
 #[derive(Debug, PartialEq)]
@@ -39,9 +39,10 @@ impl<T: Default> Default for CommType<T> {
 }
 
 pub struct Grade {
-    spec: Option<String>,
-    grade: Option<String>,
-    test: Option<String>
+    pub spec: Option<String>,
+    pub grade: Option<String>,
+    pub test: Option<String>,
+    pub zone: u8
 }
 
 impl From<&tiberius::Row> for Grade {
@@ -51,17 +52,34 @@ impl From<&tiberius::Row> for Grade {
             // https://users.rust-lang.org/t/convert-option-str-to-option-string/20533
             spec:   row.get::<&str, _>("Specification").map(Into::into),
             grade:  row.get::<&str, _>("Grade").map(Into::into),
-            test:   row.get::<&str, _>("ImpactTest").map(Into::into)
+            test:   row.get::<&str, _>("ImpactTest").map(Into::into),
+            zone:   2
         }
     }
 }
 
+#[allow(dead_code)]
 pub enum Test {
     Fcm,
     Charpy,
     None,
     NotApplicable
 }
+
+// impl From<Option<String>> for Test {
+//     from(test: Option<String>) -> Test {
+//         match test {
+//             Some(s) => match &s as &str {
+//                 "A240-304" => Test::NotApplicable,
+//                 "A606-TYPE4" => Test::NotApplicable,
+//                 "FCM" => Test::Fcm,
+//                 "T" => Test::Charpy,
+//                 _ => Test::None
+//             },
+//             None => Test::None
+//         }
+//     }
+// }
 
 impl Display for Test {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
