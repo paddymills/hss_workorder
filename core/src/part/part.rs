@@ -4,8 +4,7 @@ use std::{
     fmt::{self, Display, Formatter}
 };
 
-mod material;
-use material::CommType;
+use crate::part::CommType;
 
 const DEFAULT_PUNCH_THK: f32 = 0.625;
 
