@@ -1,3 +1,7 @@
 **/target
 
 /config
+
+# Added by cargo
+
+/target

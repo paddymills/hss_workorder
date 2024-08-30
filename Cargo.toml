@@ -1,5 +1,10 @@
-[workspace]
-members = [
-    "core",
-    "cds"
-]
+[package]
+name = "workorder"
+version = "1.1.0"
+edition = "2021"
+
+[dependencies]
+calamine = { version = "0.25.0", features = ["dates"] }
+
+[dev-dependencies]
+winres = "0.1.12"
